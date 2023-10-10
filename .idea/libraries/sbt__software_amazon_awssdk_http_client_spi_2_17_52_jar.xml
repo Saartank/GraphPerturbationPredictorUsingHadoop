@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="sbt: software.amazon.awssdk:http-client-spi:2.17.52:jar" external-system-id="SBT">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2/software/amazon/awssdk/http-client-spi/2.17.52/http-client-spi-2.17.52.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2/software/amazon/awssdk/http-client-spi/2.17.52/http-client-spi-2.17.52-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2/software/amazon/awssdk/http-client-spi/2.17.52/http-client-spi-2.17.52-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
