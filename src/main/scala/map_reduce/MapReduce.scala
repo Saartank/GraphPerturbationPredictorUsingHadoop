@@ -20,7 +20,7 @@ object MapReduce {
 
   private val shardLocation = config.getString("locations.shardDir")
   private val mapRedOutLocation = config.getString("locations.mapRedOutDir")
-
+  // removing because validation function fails in aws environment
   /*
   def validatePaths(): Boolean = {
     val dirPath = Paths.get(shardLocation)
@@ -90,7 +90,6 @@ object MapReduce {
   //For testing @main
   def main(): Unit = {
     val conf = new Configuration()
-    //conf.set("mapreduce.job.reduces", "1")
     conf.setBoolean("mapreduce.map.speculative", false)
     conf.setBoolean("mapreduce.reduce.speculative", false)
     conf.setInt("mapreduce.job.reduces", 1)
@@ -107,7 +106,6 @@ object MapReduce {
     FileOutputFormat.setOutputPath(job, new Path(mapRedOutLocation))
 
     val success: Boolean = job.waitForCompletion(true);
-    println(s"success = ${success}")
     //System.exit(if (job.waitForCompletion(true)) 0 else 1)
 
   }

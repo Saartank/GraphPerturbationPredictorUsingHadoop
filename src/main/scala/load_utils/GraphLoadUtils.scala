@@ -20,6 +20,8 @@ object GraphLoadUtils {
 
 
   def loadGraph(path: String): Option[NetGraph]={
+
+    // Load the graph in a Netgraph object
     logger.info(s"Loading the NetGraph from $path")
 
     Try {
@@ -38,6 +40,7 @@ object GraphLoadUtils {
       val edges = listOfNetComponents.collect { case edge: Action => edge }
       logger.info(s"Deserialized ${nodes.length} nodes and ${edges.length} edges")
 
+      // returns a Netgraph object
       NetModelAlgebra(nodes, edges)
     }
 
@@ -45,6 +48,7 @@ object GraphLoadUtils {
 
   def generateShards(originalGraphPath: String, perturbedGraphPath: String): (Int, Int) ={
 
+    // Create shard dir if it does not already exist, this only works in the local environment and not in aws.
     if (Files.notExists(Paths.get(shardDir))) {
       Files.createDirectories(Paths.get(shardDir))
       println(s"Directory $shardDir created.")

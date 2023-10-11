@@ -36,6 +36,7 @@ object Utils {
   }
 
 
+  // function to create bar plot
   def createPlot(modified: Map[String, Double], removed: Map[String, Double], added: Map[String, Double]): Unit = {
     val dataset = new DefaultCategoryDataset()
     for ((nodeType, scores) <- Map("Modified" -> modified, "Removed" -> removed, "Added" -> added)) {
@@ -70,31 +71,8 @@ object Utils {
     }
   }
 
-  /* Idea of TL changed
 
-  def getScores(predicted: List[Int], actual: List[Int], nodeSizes: (Int,Int)): Map[String, Double] = {
-
-    logger.info(s"Predicted: ${predicted}")
-    logger.info(s"Actual: ${actual}")
-
-    val atl = predicted.count(a => actual.contains(a))
-    val ctl = actual.count(a => !predicted.contains(a))
-    val wtl = predicted.length - atl
-    //val dtl = 2400 - (atl + ctl + wtl)
-    val dtl = (nodeSizes(0) + nodeSizes(1) - (2*atl + ctl + wtl))/2
-
-    val btl = ctl + wtl
-    val gtl = atl + dtl
-    val rtl = gtl + btl
-
-    val acc = atl.toDouble / rtl
-    val btlr = wtl.toDouble / rtl
-    val vpr = (gtl - btl).toDouble / (2 * rtl) + 0.5
-    logger.info(s"dtl : ${dtl}, atl : ${atl}, ctl : ${ctl}, wtl : ${wtl}")
-    logger.info(f"acc: ${acc}%.4f, btlr: ${btlr}%.4f, vpr: ${vpr}%.4f")
-    Map("acc" -> acc, "btlr" -> btlr, "vpr" -> vpr)
-  }*/
-
+  // Function to calculate confusion-matrix based scores
   def getScores(predicted: List[Int], actual: List[Int], nodeSizes: (Int, Int)): Map[String, Double] = {
 
     logger.info(s"Predicted: ${predicted}")
@@ -103,7 +81,6 @@ object Utils {
     val tp = predicted.count(a => actual.contains(a))
     val fn = actual.count(a => !predicted.contains(a))
     val fp = predicted.length - tp
-    //val dtl = 2400 - (atl + ctl + wtl)
     val tn = (nodeSizes(0) + nodeSizes(1) - (2 * tp + fn + fp)) / 2
 
     val precision: Double = if (tp+fp>0) tp.toDouble / (tp.toDouble + fp.toDouble) else 0.0
@@ -115,7 +92,7 @@ object Utils {
     logger.info(f"precision -> ${precision}%.4f recall -> ${recall}%.4f, f1_score -> ${f1_score}%.4f")
     Map("precision" -> precision, "recall" -> recall, "f1_score" -> f1_score)
   }
-
+  // Function to calculate TL based scores
   def getTlBasedScores(modifiedActual: List[Int], modifiedPredicted: List[Int], removedActual: List[Int], removedPredicted: List[Int], addedActual: List[Int], addedPredicted: List[Int], nodeSizes: (Int, Int)) : Map[String, Double]={
     val changedActual = removedActual ++ addedActual
     val changedPredicted = removedPredicted ++ removedPredicted
@@ -151,27 +128,8 @@ object Utils {
     Map("acc" -> acc, "btlr" -> btlr, "vpr" -> vpr)
 
   }
-  def oldgetTlBasedScores(actualAllChanged : List[Int], predictedAllChanged : List[Int], nodeSizes: (Int, Int)) : Map[String, Double]={
-    val dtl = actualAllChanged.count(a => predictedAllChanged.contains(a))
-    val ctl = actualAllChanged.size - dtl
-    val wtl = predictedAllChanged.size - dtl
-    val atl = (nodeSizes(0) + nodeSizes(1) - ctl - wtl - 2*dtl)/2
-
-    val gtl = atl + dtl
-    val btl = wtl + ctl
-
-    val rtl = gtl + btl
-
-    val acc = atl.toDouble / rtl
-    val btlr = wtl.toDouble / rtl
-    val vpr = (gtl - btl).toDouble / (2 * rtl) + 0.5
-
-    logger.info(s"dtl : ${dtl}, atl : ${atl}, ctl : ${ctl}, wtl : ${wtl}")
-    logger.info(f"acc: ${acc}%.4f, btlr: ${btlr}%.4f, vpr: ${vpr}%.4f")
-    Map("acc" -> acc, "btlr" -> btlr, "vpr" -> vpr)
-  }
-
-
+  
+  // Identifying the SimScore boundary between modified and added nodes using K-Means clustering
   def splitUsingKMeans(modified_removed_buffer: mutable.ListBuffer[(Int, Double)]) : (mutable.ListBuffer[Int], mutable.ListBuffer[Int]) ={
     val removed = mutable.ListBuffer[Int]()
     val modified = mutable.ListBuffer[Int]()
@@ -217,6 +175,7 @@ object Utils {
     return (modified, removed)
   }
 
+  // Reading the output of the Map-Reduce Job
   def readMapRedOut(): (List[Int], List[Int], List[Int])  = {
     logger.info("Parsing Map-Reduce output file...")
 
@@ -294,6 +253,7 @@ object Utils {
     (modifiedPredicted, removedPredicted, addedPredicted)
   }
 
+  // Saving scores in YAML.
   def saveScores(modifyAcc: Map[String, Double], removeAcc: Map[String, Double], addAcc: Map[String, Double], tlBasedScores: Map[String, Double]): Unit = {
 
     def formatDouble(value: Double): Double =

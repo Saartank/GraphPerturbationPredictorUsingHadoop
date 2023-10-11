@@ -22,8 +22,11 @@ object ProcessMapRedOut {
   private val yamlGT = config.getString("locations.groundTruthYAML")
   private val analysisOutputDIr = config.getString("locations.analysisOutputDir")
   def performPostProcessing(nodeSizes: (Int, Int)): Unit = {
+    
+    // Read the output produced by the map-reduce job
     val (modifiedPredicted, removedPredicted, addedPredicted) : (List[Int], List[Int], List[Int]) = Utils.readMapRedOut()
 
+    // Read the YAML and replace \t with spaces so a YAML reader can parse it  
     val fileContent = Try {
       val source = if (env.toLowerCase()!="aws") then Source.fromFile(yamlGT) else getS3File(yamlGT)
       val content = source.mkString.replaceAll("\t", " ") // Replace tabs with spaces
@@ -37,6 +40,7 @@ object ProcessMapRedOut {
 
     logger.info("Finished parsing the Map-Reduce output file.")
 
+    // Load the YAML and retrieve the ground-truth changes
     val data = new Yaml().load(fileContent).asInstanceOf[java.util.Map[String, Any]].asScala.toMap
     data.get("Nodes") match {
       case Some(nodes) => nodes.asInstanceOf[java.util.Map[String, Any]].asScala.toMap match {
@@ -47,9 +51,10 @@ object ProcessMapRedOut {
 
           logger.info("Calculating traceability-link based...")
 
+          //Get TL based scores
           val tlBasedScores = Utils.getTlBasedScores(modifiedActual, modifiedPredicted, removedActual, removedPredicted, addedActual, addedPredicted, nodeSizes)
 
-
+          //Get confusion-matrix based scores
           logger.info("Calculating confusion-matrix based scores for 'Modified Nodes'...")
           val modifyAcc = Utils.getScores(modifiedPredicted, modifiedActual, nodeSizes)
           logger.info("Calculating confusion-matrix based scores for 'Removed Nodes'...")
@@ -57,6 +62,7 @@ object ProcessMapRedOut {
           logger.info("Calculating confusion-matrix based scores for 'Added Nodes'...")
           val addAcc = Utils.getScores(addedPredicted, addedActual, nodeSizes)
 
+          //Create plot and save all scores in a YAML
           Utils.createPlot(modifyAcc, removeAcc, addAcc)
           Utils.saveScores(modifyAcc, removeAcc, addAcc, tlBasedScores)
       }

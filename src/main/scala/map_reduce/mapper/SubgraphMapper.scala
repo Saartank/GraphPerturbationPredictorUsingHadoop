@@ -21,55 +21,8 @@ object SubgraphMapper {
 
 
   private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
-  /*
-  private val C: Double = 0.8 // Constant decay factor
-  private val ITERATIONS: Int = 6 // Number of iterations to limit the recursion depth
-
-  def simRank(original: SubgraphShard, perturbed: SubgraphShard): Map[Int, (Int, Double)] = {
-    val memo = mutable.Map[(Int, Int, Int), Double]()
-
-    def calculateSimilarity(a: Int, b: Int, iteration: Int): Double = {
-      if (iteration == 0) return 0.0
-      if (original.storedValues(a) == perturbed.storedValues(b)) return 1.0
-
-      memo.get((a, b, iteration)) match {
-        case Some(result) => return result
-        case None =>
-      }
-
-      val neighborsA = original.adjList.getOrElse(a, List())
-      val neighborsB = perturbed.adjList.getOrElse(b, List())
-
-      if (neighborsA.isEmpty || neighborsB.isEmpty) return 0.0
-
-      val similarities = for {
-        neighborA <- neighborsA
-        neighborB <- neighborsB
-      } yield calculateSimilarity(neighborA, neighborB, iteration - 1)
-
-      val result = C * similarities.sum / (neighborsA.size * neighborsB.size)
-      memo += ((a, b, iteration) -> result)
-      result
-    }
-
-    val results = for {
-      nodeA <- original.adjList.keys
-    } yield {
-      val similarities = for {
-        nodeB <- perturbed.adjList.keys
-      } yield (nodeB, calculateSimilarity(nodeA, nodeB, ITERATIONS))
-
-      val maxSimilarity = similarities.maxBy(_._2)
-      (nodeA, maxSimilarity)
-    }
-
-    results.toMap
-  }*/
 
   class NodeMapper extends Mapper[Object, Text, Text, Text] {
-    //val outputKey = new Text()
-    //val outputValue = new IntWritable(1)
-
     val opKey = new Text()
     val opValue = new Text()
 
@@ -81,9 +34,7 @@ object SubgraphMapper {
       val result = decode[Shard](value.toString)
       result match {
         case Right(shard) =>
-
-          //Adding structure encodings for Simrank
-
+          
           val memo = mutable.Map[(Int, Int, Int), Double]()
 
           val orgGraphRanks = SimRank.simRank(shard.originalGraph, shard.perturbedGraph, memo)
@@ -94,9 +45,7 @@ object SubgraphMapper {
             opKey.set(key)
             opValue.set(value)
             context.write(opKey, opValue)
-            if(key == "original_123"){
-              logger.info(s"Written key : ${key}, value : ${value}")
-            }
+            
           }
 
           val perGraphRanks = SimRank.simRank(shard.perturbedGraph, shard.originalGraph, memo)
@@ -107,7 +56,6 @@ object SubgraphMapper {
             opKey.set(key)
             opValue.set(value)
             context.write(opKey, opValue)
-            //logger.info(s"Written key : ${key}, value : ${value}")
           }
 
         case Left(error) =>

@@ -28,7 +28,7 @@ object GraphUtils {
   private val env = config.getString("locations.env")
   private val extraHops: Int = config.getString("parameters.shardingExtraHops").toInt
 
-
+  // Function to extract a subgraph from the given adjacency list, focusing on specific nodes and their neighbors up to a maximum number of hops
   def extractSubgraph(
                        adjacencyList: Map[Int, List[Int]],
                        nodes: Set[Int],
@@ -59,12 +59,13 @@ object GraphUtils {
 
     subgraph
   }
-
+  // Function to partition the graph into a specified number of parts
   def partitionGraph(adjList: Map[Int, List[Int]], numOfParts: Int): Array[Set[Int]] = {
     val vertices = adjList.keys.toSeq
     val partitions = Array.fill(numOfParts)(Set.empty[Int])
     val visited = mutable.Set.empty[Int]
 
+    // Recursive DFS function to explore and add vertices to the current partition until it reaches the desired size
     def dfs(vertex: Int, smallestPartitionIndex: Int): Unit = {
       if (!visited(vertex) && partitions(smallestPartitionIndex).size < vertices.size / numOfParts) {
         partitions(smallestPartitionIndex) += vertex
@@ -73,13 +74,12 @@ object GraphUtils {
         adjList.getOrElse(vertex, Nil).foreach(nei => dfs(nei, smallestPartitionIndex))
       }
     }
-
+    // Iterate over all vertices and assign them to the partition with the smallest current size
     vertices.foreach { vertex =>
       if (!visited(vertex)) {
         val smallestPartitionIndex = partitions.zipWithIndex.minBy(_._1.size)._2
         partitions(smallestPartitionIndex) += vertex
         visited += vertex
-        //println(s"added $vertex in $smallestPartitionIndex by while loop")
         adjList.getOrElse(vertex, Nil).foreach(nei => dfs(nei, smallestPartitionIndex))
       }
     }
@@ -100,6 +100,8 @@ object GraphUtils {
     }
   }
 
+  // Function to obtain subgraph shards from a Netgraph
+
   def getSubGraphShard(someGraph: NetGraph): ArrayBuffer[SubgraphShard] = {
     val numParts = numberOfShards.toInt
     //Preparing the original graph
@@ -107,7 +109,7 @@ object GraphUtils {
     val edgeList = someGraph.sm.edges.asScala.toList.map { element =>
       element.asScala.toList
     }
-
+    // Constructing adjacency list from edges
     val adjacencyList: Map[Int, List[Int]] = allNodes.map { node =>
       val allSrcs = edgeList.collect {
         case innerList if innerList(0).id == node.id => innerList(1).id
@@ -121,11 +123,13 @@ object GraphUtils {
 
     val shards = ArrayBuffer[SubgraphShard]()
 
+    // Iterating over each partition to create subgraph shards
     for (i <- 1 to splitNodes.length) {
       val nodeIds = splitNodes(i - 1)
 
       val subAdjList: Map[Int, List[Int]] = GraphUtils.extractSubgraph(undirAdjacencyList, nodeIds)
 
+      // Helper function to retrieve the stored value of a node by its ID
       def findStoredValueById(idToFind: Int): String = {
         val matchingNode = allNodes.find(_.id == idToFind)
         matchingNode match {
@@ -144,25 +148,26 @@ object GraphUtils {
       val shard = new SubgraphShard(nodeIds, subAdjList, stored_values)
       shards+=shard
     }
-
+    // Returning the final list of shards
     shards
   }
 
+  // Function to save the subgraph shards of the original and perturbed graphs
   def saveShards(originalGraph: NetGraph, perturbedGraph: NetGraph): Unit = {
     val orgShards = getSubGraphShard(originalGraph)
     val perShards = getSubGraphShard(perturbedGraph)
-
+    // Iterating over each pair of shards to save them
     for {
       (shard1, index1) <- orgShards.zipWithIndex
       (shard2, index2) <- perShards.zipWithIndex
     } {
       val uniqueIdentifier = s"$index1-$index2"
       val shard = Shard(shard1, shard2)
-
+      // Converting the shard to JSON for saving
       val jsonString = shard.asJson.noSpaces
 
       val filePath = s"$shardDir/subgraph_shard_${uniqueIdentifier}.json"
-
+      // Saving the shard either locally or to S3 depending on the environment
       if (env.toLowerCase() != "aws") {
         Using(Files.newBufferedWriter(Paths.get(filePath))) { writer =>
           writer.write(jsonString)
